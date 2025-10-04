@@ -1,0 +1,140 @@
+/* ===========================
+   General Reset & Layout
+=========================== */
+* {margin:0; padding:0; box-sizing:border-box; font-family:'Inter', sans-serif;}
+body,html,#root{height:100%; width:100%; background:#f3f4f6; color:#111;}
+
+/* Dashboard layout */
+
+.dashboard{display:flex; height:100vh; overflow:hidden;}
+
+/* ===========================
+   Sidebar
+=========================== */
+.sidebar{width:240px; background:#1f2937; color:#fff; display:flex; flex-direction:column; justify-content: flex-start; align-items: flex-start; padding:20px; height: 100vh; }
+.sidebar .logo{font-size:1.4em; font-weight:bold; margin-bottom:30px;}
+.sidebar-list{display:flex; flex-direction:column; gap:10px; flex-grow: 1;}
+.sidebar-list button{background:none; border:none; color:#d1d5db; font-size:0.95em; padding:10px 15px; border-radius:8px; display:flex; align-items:center; gap:10px; cursor:pointer; transition:0.2s;}
+.sidebar-list button.active, .sidebar-list button:hover{background:#374151; color:#fff;}
+.sidebar-list .icon{display:flex; align-items:center; justify-content:center;}
+.sidebar-footer{margin-top: auto; display: cover; flex-direction: column; gap: 10px;}
+
+/* ===========================
+   Main Content
+=========================== */
+.main-content{flex:1; display:flex; flex-direction:column;}
+header{display:flex; justify-content:space-between; align-items:center; padding:15px 20px; background:#fff; box-shadow:0 2px 6px rgba(0,0,0,0.05);}
+header .search{padding:8px 12px; border-radius:8px; border:1px solid #ccc; width:250px;}
+header .user-block{display:flex; align-items:center; gap:15px;}
+header .user-block .greeting{font-weight:500;}
+header .user-block .role{font-size:0.85em; color:#555;}
+header .user-block .avatar{border-radius:50%; cursor:pointer;}
+
+/* ===========================
+   Stats Cards
+=========================== */
+.stats-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:15px; padding:20px;}
+.stat-card{background:#fff; padding:15px 20px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.05); display:flex; flex-direction:column;}
+.stat-card .stat-value{font-size:1.6em; font-weight:bold; margin-bottom:5px;}
+.stat-card .stat-label{font-size:0.85em; color:#555;}
+
+/* ===========================
+   Content Grid
+=========================== */
+.content-grid{display:grid; grid-template-columns:2fr 3fr 1.5fr; gap:20px; padding:20px;}
+.col-left,.col-mid,.col-right{display:flex; flex-direction:column; gap:15px;}
+
+/* ===========================
+   Widget Card
+=========================== */
+.widget-card{background:#fff; border-radius:12px; padding:15px 20px; box-shadow:0 2px 6px rgba(0,0,0,0.05);}
+.widget-card h3{margin-bottom:12px; font-size:1.1em; color:#111;}
+
+/* ===========================
+   Forms
+=========================== */
+form .form-row{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+form .form-row label{font-size:0.85em; color:#555;}
+form .form-row input, form .form-row select{padding:8px 10px; border-radius:6px; border:1px solid #ccc; font-size:0.9em; flex:1;}
+form .form-row input[type=checkbox]{width:auto;}
+form button.submit{padding:8px 12px; background:#3b82f6; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:bold; transition:0.2s;}
+form button.submit:hover{opacity:0.9;}
+
+/* ===========================
+   Lists & Tables
+=========================== */
+.list{display:flex; flex-direction:column; gap:8px; max-height:250px; overflow-y:auto;}
+.list-row{display:flex; justify-content:space-between; align-items:center; background:#f9fafb; padding:8px 12px; border-radius:6px; font-size:0.9em;}
+.list-row .row-actions{display:flex; align-items:center; gap:8px;}
+.list-row .delete{padding:3px 6px; background:#ef4444; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:0.75em;}
+.list-row .delete:hover{opacity:0.85;}
+.muted{color:#777; font-size:0.85em;}
+
+/* Tables */
+table{width:100%; border-collapse:collapse;}
+table th, table td{padding:10px; border-bottom:1px solid #e5e7eb; text-align:left;}
+table th{color:#555; font-size:0.85em;}
+
+/* ===========================
+   Quick Actions
+=========================== */
+.quick-list{display:flex; flex-direction:column; gap:10px;}
+.quick-list button.submit{width:100%; text-align:center;}
+
+/* ===========================
+   FAQ
+=========================== */
+.faq-q{font-weight:500;}
+.faq-a{margin-left:10px; color:#555; font-size:0.85em;}
+
+/* ===========================
+   Profile Modal
+=========================== */
+.profile-modal{position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); display:flex; justify-content:center; align-items:center; z-index:1000;}
+.profile-card{background:#fff; padding:20px; border-radius:12px; width:400px; max-width:90%; box-shadow:0 4px 12px rgba(0,0,0,0.15);}
+.profile-card h3{margin-bottom:15px;}
+.avatar-preview-container{display:flex; align-items:center; gap:15px; margin-bottom:15px;}
+.avatar-preview{width:60px; height:60px; border-radius:50%; object-fit:cover; border:2px solid #3b82f6;}
+.profile-card input[type=file]{flex:1;}
+.profile-card .form-row{display:flex; flex-direction:column; margin-bottom:10px;}
+.profile-card .form-row label{font-size:0.85em; color:#555; margin-bottom:4px;}
+.profile-card .form-row input{padding:8px 10px; border-radius:6px; border:1px solid #ccc; font-size:0.9em;}
+
+
+/* Glowing effect for stat cards */
+.stat-card {
+  background: #f1c8c8;
+  padding: 15px 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05),
+              0 0 12px rgba(59, 130, 246, 0.3); /* blue glow */
+  transition: 0.3s ease-in-out;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1),
+              0 0 20px rgba(59, 130, 246, 0.6);
+}
+
+/* Glowing effect for widget cards */
+.widget-card {
+  background: #ec9696;
+  border-radius: 12px;
+  padding: 15px 20px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05),
+              0 0 12px rgba(16, 185, 129, 0.25); /* greenish glow */
+  transition: 0.3s ease-in-out;
+}
+
+.widget-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1),
+              0 0 20px rgba(16, 185, 129, 0.6);
+}
+
+/* ===========================
+   Responsive
+=========================== */
+@media(max-width:1200px){.content-grid{grid-template-columns:1fr 2fr;}}
+@media(max-width:900px){.content-grid{grid-template-columns:1fr;}.sidebar{width:60px;}.sidebar .label{display:none;}.sidebar .logo{display:none;}}
