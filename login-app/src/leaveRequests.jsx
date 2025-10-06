@@ -72,7 +72,7 @@ export default function LeaveRequests() {
             <tbody>
               {leaveRequests.map((leave) => (
                 <tr key={leave._id}>
-                  <td>{leave.userId?.name || "Unknown"}</td>
+                  <td>{leave.userId?.firstName || "Unknown"}</td>
                   <td>{leave.userId?.email || "Unknown"}</td>
                   <td>{leave.from}</td>
                   <td>{leave.to}</td>

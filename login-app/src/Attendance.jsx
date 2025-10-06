@@ -45,7 +45,7 @@ export default function Attendance() {
           <tbody>
             {attendance.map((a) => (
               <tr key={a._id}>
-                <td>{a.userId?.name || "Unknown"}</td>
+                <td>{a.userId?.firstName || "Unknown"}</td>
                 <td>{a.userId?.email || "Unknown"}</td>
                 <td>{a.date}</td>
                 <td>{a.status}</td>

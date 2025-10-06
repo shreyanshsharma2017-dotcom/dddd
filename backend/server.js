@@ -7,6 +7,8 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const bcrypt = require("bcryptjs");
 
+
+
 const app = express();
 app.use(cors());
 app.use(bodyParser.json({ limit: "50mb" }));  // allow up to 50 MB
@@ -45,6 +47,28 @@ router.post("/progress", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
+// routes/admin.js
+router.post("/assign-member", async (req, res) => {
+  try {
+    const { taskId, memberId } = req.body;
+
+    const task = await Task.findById(taskId);
+    if (!task) return res.json({ success: false, message: "Task not found" });
+
+    // Avoid duplicates
+    if (!task.assignedTo.includes(memberId)) {
+      task.assignedTo.push(memberId);
+    }
+
+    await task.save();
+    res.json({ success: true, message: "Member assigned successfully", task });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 // Mount the router to /admin
 app.use("/admin", router);
 
@@ -84,7 +108,8 @@ const progressTaskSchema = new mongoose.Schema({
 
 // ================= Schemas =================
 const UserSchema = new mongoose.Schema({
-  name: String,
+  firstName: { type: String, required: true },
+  lastName: String,
   email: { type: String, unique: true },
   password: String,
   address: String,
@@ -94,13 +119,14 @@ const UserSchema = new mongoose.Schema({
 });
 
 const AttendanceSchema = new mongoose.Schema({
-  userId: mongoose.Schema.Types.ObjectId,
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   date: String,
   status: String,
 });
 
 const LeaveRequestSchema = new mongoose.Schema({
-  userId: mongoose.Schema.Types.ObjectId,
+  name: String,
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   from: String,
   to: String,
   reason: String,
@@ -120,12 +146,26 @@ const AnnouncementSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now },
 });
 
+
+const TaskSchema = new mongoose.Schema({
+  name: String,
+  progress: Number,
+  assignedTo: [{ type: mongoose.Schema.Types.ObjectId, ref: "Member" }]
+});
+
+const MemberSchema = new mongoose.Schema({
+  name: String,
+  status: String
+});
+
+
 // ================= Models =================
 const User = mongoose.model("User", UserSchema);
 const Attendance = mongoose.model("Attendance", AttendanceSchema);
 const LeaveRequest = mongoose.model("LeaveRequest", LeaveRequestSchema);
 const Payroll = mongoose.model("Payroll", PayrollSchema);
 const Announcement = mongoose.model("Announcement", AnnouncementSchema);
+const ProgressTask = mongoose.model("ProgressTask", progressTaskSchema);
 
 // ================= Middleware =================
 // Promote a user to admin (for setup/debug)
@@ -156,17 +196,21 @@ const isAdmin = async (req, res, next) => {
 
 // ================= Auth APIs =================
 app.post("/register", async (req, res) => {
-  const { name, email, password, role } = req.body;
-  const hashedPassword = await bcrypt.hash(password, 10);
-
   try {
-    const newUser = new User({ name, email, password: hashedPassword, role: role || "User" });
+    const { fullName, email, password, role } = req.body;
+    const [firstName, ...lastParts] = fullName.split(" ");
+    const lastName = lastParts.join(" ");
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new User({ firstName, lastName, email, password: hashedPassword, role: role || "User" });
     await newUser.save();
     res.json({ success: true, message: "User registered successfully" });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
 
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
@@ -231,13 +275,28 @@ app.get("/attendance/:userId", async (req, res) => {
 
 app.post("/leave-request", async (req, res) => {
   try {
-    const leave = new LeaveRequest(req.body);
+    const { userId, from, to, reason } = req.body;
+
+    // Fetch user to get name
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    const leave = new LeaveRequest({
+      userId,
+      name: user.firstName + " " + user.lastName, // store full name
+      from,
+      to,
+      reason
+    });
+
     await leave.save();
-    res.json({ success: true, message: "Leave request submitted" });
+    res.json({ success: true, message: "Leave request submitted", leave });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
+
 
 // User can view their own leave requests
 app.get("/leave-request/:userId", async (req, res) => {
@@ -309,7 +368,7 @@ app.get("/admin/employees", isAdmin, async (req, res) => {
 // Admin: Get all attendance records with user info
 app.get("/admin/attendance", isAdmin, async (req, res) => {
   try {
-    const attendance = await Attendance.find({}).populate('userId', 'name email');
+    const attendance = await Attendance.find({}).populate('userId', 'firstName lastName email');
     res.json({ success: true, attendance });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -336,7 +395,8 @@ app.put("/admin/leave-requests/:id", isAdmin, async (req, res) => {
       req.params.id,
       { status },
       { new: true }
-    ).populate("userId", "name email");
+    ).populate('userId', 'firstName lastName email')
+
 
     if (!leave) {
       return res.status(404).json({ success: false, message: "Leave request not found" });
@@ -360,7 +420,8 @@ app.put("/admin/users/:id/role", isAdmin, async (req, res) => {
 
 app.get("/admin/leave-requests", isAdmin, async (req, res) => {
   try {
-  const leaveRequests = await LeaveRequest.find({}).populate('userId', 'name email');
+  const leaveRequests = await LeaveRequest.find({}).populate('userId', 'firstName lastName email')
+;
   res.json({ success: true, leaveRequests });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -429,6 +490,20 @@ app.delete("/admin/announcements/:id", isAdmin, async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+// Get user info by ID
+app.get("/user/:id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    res.json({ success: true, user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 // Update user profile
 app.put("/users/:id", async (req, res) => {
   try {
