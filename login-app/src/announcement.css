@@ -1,0 +1,95 @@
+.announcements-container {
+  max-width: 800px;
+  margin: 30px auto;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.announcements-container h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.announcement-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 30px;
+}
+
+.announcement-form input,
+.announcement-form textarea {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 15px;
+  transition: border 0.2s;
+}
+
+.announcement-form input:focus,
+.announcement-form textarea:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+.announcement-form textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.announcement-form button {
+  background-color: #007bff;
+  color: #fff;
+  padding: 10px 16px;
+  font-size: 16px;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.announcement-form button:hover {
+  background-color: #0056b3;
+}
+
+.announcement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.announcement-card {
+  background-color: #fff;
+  padding: 10px 20px;
+  border-radius: 15px;
+  width: 250px;
+  max-width: 100%;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.announcement-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
+}
+
+.announcement-card h3 {
+  margin: 0 0 6px 0;
+  font-size: 18px;
+  color: #222;
+}
+
+.announcement-card p {
+  margin: 0 0 8px 0;
+  color: #555;
+}
+
+.announcement-card small {
+  color: #888;
+  font-size: 13px;
+}

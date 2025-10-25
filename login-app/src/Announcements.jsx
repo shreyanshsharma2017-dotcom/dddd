@@ -1,54 +1,67 @@
 import React, { useEffect, useState } from "react";
+import "./announcement.css";
 
-export default function Announcements() {
-  const [announcements, setAnnouncements] = useState([]);
-  const [loading, setLoading] = useState(false);
+export default function Announcements({ currentUser }) {
+  // currentUser must have: { _id, firstName, lastName, role }
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
+  const [announcements, setAnnouncements] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch all announcements
+  const fetchAnnouncements = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("http://localhost:5000/announcements");
+      const data = await res.json();
+      if (data.success) setAnnouncements(data.announcements);
+      setLoading(false);
+    } catch (err) {
+      console.error("Failed to fetch announcements:", err);
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchAnnouncements();
   }, []);
 
-  const fetchAnnouncements = async () => {
-    setLoading(true);
-    try {
-      const adminUser = JSON.parse(localStorage.getItem("user"));
-      const res = await fetch("http://localhost:5000/announcements", {
-        headers: {
-          "Content-Type": "application/json"
-        },
-      });
-      const data = await res.json();
-      if (data.success) setAnnouncements(data.announcements || []);
-    } catch (err) {
-      console.error("Error fetching announcements:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Submit announcement
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  const handleAddAnnouncement = async () => {
-    if (!title || !message) return alert("Title and message required");
+    if (!currentUser) return alert("User not loaded yet");
+    if (!title || !message) return alert("Title and message are required");
+
+    const role = currentUser.role?.toLowerCase() || "user";
+
+    const url =
+      role === "admin"
+        ? "http://localhost:5000/admin/announcements"
+        : "http://localhost:5000/announcements";
+
+    const payload =
+      role === "admin"
+        ? { title, message }
+        : { title, message, userId: currentUser._id };
 
     try {
-      const adminUser = JSON.parse(localStorage.getItem("user"));
-      const res = await fetch("http://localhost:5000/admin/announcements", {
+      const res = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          userId: adminUser?._id,
+          ...(role === "admin" && { userId: currentUser._id }), // required for isAdmin
         },
-        body: JSON.stringify({ title, message }),
+        body: JSON.stringify(payload),
       });
+
       const data = await res.json();
       if (data.success) {
-        alert("Announcement posted!");
         setTitle("");
         setMessage("");
-        fetchAnnouncements();
+        fetchAnnouncements(); // refresh list
       } else {
-        alert("Failed to post announcement");
+        alert(data.message || "Failed to post announcement");
       }
     } catch (err) {
       console.error("Error posting announcement:", err);
@@ -56,11 +69,11 @@ export default function Announcements() {
   };
 
   return (
-    <div>
+    <div className="announcements-container">
       <h2>Announcements</h2>
 
-      {/* Add Announcement Form */}
-      <div className="announcement-form">
+      {/* Post Announcement Form */}
+      <form onSubmit={handleSubmit} className="announcement-form">
         <input
           type="text"
           placeholder="Title"
@@ -72,54 +85,30 @@ export default function Announcements() {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
         />
-        <button onClick={handleAddAnnouncement}>Post</button>
-      </div>
+        <button type="submit">Post Announcement</button>
+      </form>
 
-      {/* Existing Announcements */}
-      {loading ? (
-        <p>Loading announcements...</p>
-      ) : (
-        <table className="employee-table">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Message</th>
-              <th>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {announcements.map((a) => (
-              <tr key={a._id}>
-                <td>{a.title}</td>
-                <td>{a.message}</td>
-                <td>{new Date(a.date).toLocaleDateString()}</td>
-                <td>
-                  <button onClick={async () => {
-                    if (window.confirm("Delete this announcement?")) {
-                      try {
-                        const res = await fetch(`http://localhost:5000/announcements/${a._id}`, {
-                          method: "DELETE",
-                        });
-                        const data = await res.json();
-                        if (data.success) {
-                          fetchAnnouncements();
-                        } else if (data.message && data.message.includes("not found")) {
-                          alert("Announcement not found. It may have already been deleted.");
-                          fetchAnnouncements();
-                        } else {
-                          alert(data.message || "Failed to delete");
-                        }
-                      } catch (err) {
-                        alert("Error deleting announcement");
-                      }
-                    }
-                  }}>Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      {/* Announcement List */}
+      <div className="announcement-list">
+        {loading ? (
+          <p>Loading announcements...</p>
+        ) : announcements.length === 0 ? (
+          <p>No announcements yet.</p>
+        ) : (
+          announcements.map((a) => (
+            <div key={a._id} className="announcement-card">
+              <h3>{a.title}</h3>
+              <p>{a.message}</p>
+              <small>
+                {a.createdBy
+                  ? `${a.createdBy.firstName} ${a.createdBy.lastName} (${a.role})`
+                  : a.role}{" "}
+                | {new Date(a.date).toLocaleString()}
+              </small>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }

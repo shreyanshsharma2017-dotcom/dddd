@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const bcrypt = require("bcryptjs");
+const path = require("path");
 
 
 
@@ -22,7 +23,25 @@ mongoose.connect("mongodb://127.0.0.1:27017/login_app", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
+ 
+app.get("/settings", async (req, res) => {
+  try {
+    const email = req.query.email;
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
 
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(user);
+  } catch (err) {
+    console.error("Error fetching settings:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 // GET /admin/progress → fetch all tasks
 router.get("/progress", async (req, res) => {
@@ -146,12 +165,25 @@ const AnnouncementSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now },
 });
 
+// ✅ Add this missing schema
+const projectSchema = new mongoose.Schema({
+  name: String,
+  description: String,
+  status: { type: String, default: "In Progress" },
+  members: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  tasks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Task" }],
+});
+
 
 const TaskSchema = new mongoose.Schema({
   name: String,
-  progress: Number,
-  assignedTo: [{ type: mongoose.Schema.Types.ObjectId, ref: "Member" }]
+  description: String,
+  status: { type: String, default: "Pending" },
+  assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  projectId: { type: mongoose.Schema.Types.ObjectId, ref: "Project" },
+  dueDate: Date,
 });
+
 
 const MemberSchema = new mongoose.Schema({
   name: String,
@@ -165,7 +197,11 @@ const Attendance = mongoose.model("Attendance", AttendanceSchema);
 const LeaveRequest = mongoose.model("LeaveRequest", LeaveRequestSchema);
 const Payroll = mongoose.model("Payroll", PayrollSchema);
 const Announcement = mongoose.model("Announcement", AnnouncementSchema);
+const Project = mongoose.model("Project", projectSchema);
+const Task = mongoose.model("Task", TaskSchema);
 const ProgressTask = mongoose.model("ProgressTask", progressTaskSchema);
+
+
 
 // ================= Middleware =================
 // Promote a user to admin (for setup/debug)
@@ -182,6 +218,7 @@ app.put("/make-admin/:id", async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
 const isAdmin = async (req, res, next) => {
   const userId = req.header("userId");
   if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -197,19 +234,30 @@ const isAdmin = async (req, res, next) => {
 // ================= Auth APIs =================
 app.post("/register", async (req, res) => {
   try {
-    const { fullName, email, password, role } = req.body;
-    const [firstName, ...lastParts] = fullName.split(" ");
-    const lastName = lastParts.join(" ");
+    const { firstName, lastName, email, password, role } = req.body;
+
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).json({ success: false, message: "All fields are required" });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = new User({ firstName, lastName, email, password: hashedPassword, role: role || "User" });
+    const newUser = new User({
+      firstName,
+      lastName,
+      email,
+      password: hashedPassword,
+      role: role || "User"
+    });
+
     await newUser.save();
     res.json({ success: true, message: "User registered successfully" });
   } catch (err) {
+    console.error("Registration Error:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
 
 
 app.post("/login", async (req, res) => {
@@ -225,7 +273,7 @@ app.post("/login", async (req, res) => {
     res.json({
       success: true,
       message: "Login successful",
-      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      user: { id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email, role: user.role },
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -518,11 +566,105 @@ app.put("/users/:id", async (req, res) => {
     if (!updatedUser)
       return res.status(404).json({ success: false, message: "User not found" });
 
-    res.json(updatedUser);
+    res.json({ success: true, user: updatedUser }); 
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+// Admin: Get overview stats
+app.get("/admin/overview-stats", async (req, res) => {
+  try {
+    const totalProjects = await Project.countDocuments();
+    const completedProjects = await Project.countDocuments({ status: "Completed" });
+
+    const totalTasks = await Task.countDocuments();
+    const completedTasks = await Task.countDocuments({ status: "Completed" });
+
+    const totalMembers = await User.countDocuments({ role: "User" });
+    const inactiveMembers = await User.countDocuments({ active: false });
+
+    res.json({
+      projects: { total: totalProjects, completed: completedProjects },
+      tasks: { total: totalTasks, completed: completedTasks },
+      members: { total: totalMembers, completed: inactiveMembers }
+    });
+  } catch (err) {
+    console.error("Overview Stats Error:", err);
+    res.status(500).json({ message: "Failed to fetch overview stats" });
+  }
+});
+
+// ================== PROJECT ROUTES ==================
+
+// Create a new project
+app.post("/admin/projects", async (req, res) => {
+  try {
+    const { name, description, status } = req.body;
+    if (!name) return res.status(400).json({ success: false, message: "Project name is required" });
+
+    const newProject = new Project({
+      name,
+      description,
+      status: status || "In Progress",
+      members: [],
+      tasks: [],
+    });
+
+    await newProject.save();
+    res.json({ success: true, message: "Project created successfully", project: newProject });
+  } catch (err) {
+    console.error("Error creating project:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// Get all projects (list for frontend)
+app.get("/admin/projects", async (req, res) => {
+  try {
+    const projects = await Project.find().populate("members", "firstName lastName email");
+    res.json({ success: true, projects });
+  } catch (err) {
+    console.error("Error fetching projects:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+
+// Assign member to a project
+app.post("/admin/projects/:projectId/assign-member", async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const project = await Project.findById(req.params.projectId);
+    if (!project) return res.status(404).json({ success: false, message: "Project not found" });
+
+    if (!project.members.includes(userId)) {
+      project.members.push(userId);
+      await project.save();
+    }
+
+    res.json({ success: true, message: "Member assigned successfully", project });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+// Add new member and assign to project
+app.post("/admin/projects/:projectId/add-member", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    const newUser = new User({ name, email, password }); // hash password if needed
+    await newUser.save();
+
+    const project = await Project.findById(req.params.projectId);
+    project.members.push(newUser._id);
+    await project.save();
+
+    res.json({ success: true, message: "New member added and assigned", user: newUser, project });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+
 
 // ================= Start Server =================
 app.listen(5000, () => console.log("Server running on port 5000"));

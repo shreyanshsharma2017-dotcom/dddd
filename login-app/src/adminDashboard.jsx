@@ -16,6 +16,7 @@ import Attendance from "./Attendance.jsx";
 import Payroll from "./Payroll.jsx";
 import Settings from "./Settings.jsx";
 import Help from "./help.jsx";
+import { useNavigate } from "react-router-dom";
 
 import "./admin.css";
 
@@ -25,6 +26,16 @@ export default function AdminDashboard({ onLogout }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [projects, setProjects] = useState([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetch("http://localhost:5000/admin/projects")
+      .then((res) => res.json())
+      .then((data) => setProjects(data.projects || []))
+      .catch((err) => console.error(err));
+  }, []);
 
   // Check admin status on mount
   useEffect(() => {
@@ -108,6 +119,7 @@ export default function AdminDashboard({ onLogout }) {
   ];
 
   return (
+    <>
     <div className="dashboard">
       {/* Sidebar */}
       <aside className="sidebar">
@@ -127,7 +139,8 @@ export default function AdminDashboard({ onLogout }) {
           </li>
         </ul>
       </aside>
-
+       
+    
       {/* Main Content */}
       <main className="main-content">
         <h1 className="main-title">Admin Dashboard</h1>
@@ -177,7 +190,7 @@ export default function AdminDashboard({ onLogout }) {
           </div>
         )}
         {/* Overview */}
-        {activeTab === "overview" && <Overview />}
+        {activeTab === "overview" && <Overview projectId={selectedProjectId} />}
 
         {/* Leave Requests */}
         {activeTab === "leave" && <LeaveRequests />}
@@ -198,5 +211,6 @@ export default function AdminDashboard({ onLogout }) {
         {activeTab === "help" && < Help/>}
       </main>
     </div>
+   </> 
   );
 }

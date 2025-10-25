@@ -8,6 +8,7 @@ import {
 } from "recharts";
 import "./dashboard.css";
 
+
 const sidebarOptions = [
   { label: "Employee Directory", icon: <Users size={18} /> },
   { label: "Leave Requests", icon: <Calendar size={18} /> },
@@ -39,43 +40,53 @@ export default function Dashboard({ user, onLogout, onupdateUser }) {
 
   // Profile states
   const [profileOpen, setProfileOpen] = useState(false);
-  const [profileForm, setProfileForm] = useState({
-    firstName: user?.firstName || "",
-    lastName: user?.lastName || "",
-    email: user?.email || "",
-    phone: user?.phone || "",
-    address: user?.address || "",
-    avatar: user?.avatar || "",
-  });
+ const [profileForm, setProfileForm] = useState({
+  firstName: user?.firstName || "",
+  lastName: user?.lastName || "",
+  email: user?.email || "",
+  phone: user?.phone || "",
+  address: user?.address || "",
+  avatar: user?.avatar || "",
+});
 
-  const handleSave = async () => {
-    if (!user || !user._id) {
-      console.error("❌ Failed to update: user._id is undefined");
-      alert("User ID is missing. Please log in again.");
+// Sync profile form whenever user updates
+useEffect(() => {
+  if (user) {
+    setProfileForm({
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      email: user.email || "",
+      phone: user.phone || "",
+      address: user.address || "",
+      avatar: user.avatar || "",
+    });
+  }
+}, [user]);
+
+const handleSave = async () => {
+  try {
+    const res = await fetch(`http://localhost:5000/users/${user._id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(profileForm),
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      console.error("❌ Update failed:", data.message);
       return;
     }
-    try {
-      const res = await fetch(`http://localhost:5000/users/${user._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(profileForm),
-      });
-
-      if (!res.ok) {
-        const error = await res.text();
-        console.error("❌ Failed to update:", error);
-        return;
-      }
-
-      const updated = await res.json();
-  onupdateUser(updated); // ✅ use DB response
-  localStorage.setItem("user", JSON.stringify(updated)); // update localStorage
-  setProfileOpen(false);
-  console.log("✅ User updated:", updated);
-    } catch (err) {
-      console.error("❌ Network error:", err);
-    }
-  };
+    
+    const updatedUser = data.user;
+    onupdateUser(updatedUser); // update parent state
+    localStorage.setItem("user", JSON.stringify(updatedUser)); // update localStorage
+    setProfileOpen(false);
+    console.log("✅ User updated:", updatedUser);
+  } catch (err) {
+    console.error("❌ Network error:", err);
+  }
+};
 
   // Forms
   const [leaveForm, setLeaveForm] = useState({ type: "Annual", from: "", to: "" });
@@ -134,6 +145,8 @@ export default function Dashboard({ user, onLogout, onupdateUser }) {
       else fetchUserLeaveRequests();
     }
   }, [active, user]);
+
+  
 
   const fetchAttendance = async () => {
     try {
@@ -214,6 +227,8 @@ export default function Dashboard({ user, onLogout, onupdateUser }) {
       default: break;
     }
   }, [active, user]);
+
+  
 
   // Analytics and charts
   const analyticsSafe = analytics || { 
