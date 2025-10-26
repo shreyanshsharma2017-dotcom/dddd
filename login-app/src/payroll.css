@@ -1,0 +1,144 @@
+:root {
+  --bg: #f7fafc;
+  --card: #ffffff;
+  --muted: #6b7280;
+  --accent: #2563eb;
+  --success: #16a34a;
+  --danger: #ef4444;
+  --radius: 10px;
+  --shadow: 0 8px 24px rgba(2,6,23,0.06);
+  --max-width: 1100px;
+}
+
+/* Page wrapper: full viewport and scrollable */
+.pay-page {
+  min-height: 100vh;
+  background: var(--bg);
+  padding: 20px;
+  box-sizing: border-box;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+  color: #0f172a;
+}
+
+/* Center content */
+.pay-container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Header */
+.pay-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.pay-title { margin: 0; font-size: 1.25rem; font-weight: 700; }
+.pay-sub { margin: 0; color: var(--muted); font-size: 0.95rem; }
+
+/* Card */
+.pay-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(15,23,42,0.04);
+}
+
+/* Loading / empty */
+.pay-loading, .pay-empty {
+  padding: 28px;
+  text-align: center;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* Table wrapper: allows inner scroll while keeping header visible */
+.pay-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 60vh; /* adjust if needed so page remains scrollable */
+  border-radius: 8px;
+  box-sizing: border-box;
+  padding-right: 6px;
+}
+
+/* Table */
+.pay-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 820px; /* prevents collapsing columns on wide layout */
+  font-size: 0.95rem;
+}
+.pay-table thead {
+  background: #fbfdff;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.pay-table th, .pay-table td {
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid #f3f4f6;
+}
+.pay-table th {
+  font-size: 0.85rem;
+  color: #374151;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+.pay-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+/* Column-specific */
+.pay-name { font-weight: 600; color: #0f172a; }
+.pay-email { color: var(--muted); font-size: 0.9rem; }
+.pay-month, .pay-salary { color: #374151; }
+
+/* Status badges */
+.pay-status {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  text-transform: capitalize;
+}
+.pay-status.pending { background: #fff7ed; color: #92400e; border: 1px solid rgba(146,64,14,0.06); }
+.pay-status.approved { background: #ecfdf5; color: #065f46; border: 1px solid rgba(6,95,70,0.08); }
+.pay-status.rejected { background: #fff1f2; color: #7f1d1d; border: 1px solid rgba(124,58,58,0.06); }
+.pay-status.unknown { background: #f3f4f6; color: #374151; border: 1px solid rgba(15,23,42,0.03); }
+
+/* Action buttons */
+.pay-actions { display: flex; gap: 8px; align-items: center; }
+.btn {
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: none;
+}
+.btn-approve { background: var(--success); color: #fff; }
+.btn-reject { background: var(--danger); color: #fff; }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Dash fallback */
+.pay-dash { color: var(--muted); font-weight: 700; }
+
+/* Prevent horizontal overflow */
+.pay-page, .pay-container, .pay-card, .pay-table-wrap, .pay-table, .pay-item { width: 100%; min-width: 0; }
+
+/* Responsive */
+@media (max-width: 1000px) {
+  .pay-table { min-width: 720px; }
+  .pay-table-wrap { max-height: 66vh; }
+}
+@media (max-width: 640px) {
+  .pay-table { min-width: 640px; font-size: 0.92rem; }
+  .pay-title { font-size: 1.1rem; }
+}

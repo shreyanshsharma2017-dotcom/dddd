@@ -1,95 +1,164 @@
-.announcements-container {
-  max-width: 800px;
-  margin: 30px auto;
+:root{
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --muted: #6b7280;
+  --accent: #2563eb;
+  --radius: 12px;
+  --shadow: 0 6px 18px rgba(2,6,23,0.06);
+  --max-width: 1100px;
+}
+
+/* Page wrapper fills viewport and enables vertical scrolling */
+.ann-page {
+  height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--bg);
+  box-sizing: border-box;
   padding: 20px;
-  background: #f9f9f9;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+  color: #0f172a;
 }
 
-.announcements-container h2 {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #333;
-}
-
-.announcement-form {
+/* Constrain content width and center */
+.ann-container {
+  max-width: var(--max-width);
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
+  gap: 18px;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+/* Prevent horizontal overflow from children */
+.ann-page, .ann-container, .ann-form-card, .ann-list, .ann-scroll, .ann-item {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Header */
+.ann-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 12px;
-  margin-bottom: 30px;
+}
+.ann-title { margin: 0; font-size: 1.25rem; font-weight: 700; }
+.ann-sub { margin: 0; color: var(--muted); font-size: 0.95rem; }
+.ann-user { display:flex; align-items:center; gap:10px; }
+.ann-avatar {
+  width:40px; height:40px; border-radius:999px; display:grid; place-items:center;
+  background:linear-gradient(180deg,#eaf2ff,#e6f0ff); color:#0f172a; font-weight:700;
+}
+.ann-user-name { font-weight:700; }
+.ann-user-role { color:var(--muted); font-size:0.85rem; }
+
+/* Form card */
+.ann-form-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(15,23,42,0.04);
 }
 
-.announcement-form input,
-.announcement-form textarea {
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 15px;
-  transition: border 0.2s;
+/* Form layout */
+.ann-form { display:flex; flex-direction:column; gap:10px; }
+.ann-form-row { display:flex; gap:8px; align-items:center; }
+.ann-input {
+  flex:1;
+  padding:10px 12px;
+  border:1px solid #e6e9ef;
+  border-radius:10px;
+  font-size:0.95rem;
+  outline:none;
+  background:#fff;
+}
+.ann-input:focus { box-shadow: 0 6px 18px rgba(37,99,235,0.06); border-color:var(--accent); }
+.ann-btn {
+  padding:10px 14px;
+  background:var(--accent);
+  color:#fff;
+  border:none;
+  border-radius:10px;
+  font-weight:700;
+  cursor:pointer;
+}
+.ann-btn:disabled { opacity:0.6; cursor:not-allowed; }
+
+/* Textarea */
+.ann-textarea {
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid #e6e9ef;
+  resize:vertical;
+  min-height:96px;
+  font-size:0.95rem;
+}
+.ann-textarea:focus { box-shadow: 0 6px 18px rgba(37,99,235,0.06); border-color:var(--accent); }
+
+/* List container */
+.ann-list { width:100%; box-sizing:border-box; }
+
+/* Scrollable announcements list: bounded height so header/form remain visible while list scrolls */
+.ann-scroll {
+  max-height: calc(100vh - 340px); /* adjust this value if header/form sizes change */
+  overflow-y: auto;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  padding-right: 8px;
+  box-sizing: border-box;
 }
 
-.announcement-form input:focus,
-.announcement-form textarea:focus {
-  border-color: #007bff;
-  outline: none;
+/* Announcement item */
+.ann-item {
+  background: var(--card);
+  border-radius: 10px;
+  padding: 12px;
+  border: 1px solid rgba(15,23,42,0.04);
+  box-shadow: 0 4px 12px rgba(2,6,23,0.03);
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
-
-.announcement-form textarea {
-  min-height: 80px;
-  resize: vertical;
+.ann-item-head { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.ann-item-title { margin:0; font-size:1rem; font-weight:700; }
+.ann-item-meta { display:flex; gap:8px; align-items:center; }
+.ann-badge {
+  padding:6px 8px;
+  border-radius:999px;
+  font-weight:700;
+  font-size:0.8rem;
+  text-transform:capitalize;
 }
+.ann-badge.admin { background:#eef2ff; color:#0f172a; border:1px solid rgba(59,130,246,0.08); }
+.ann-badge.user { background:#f3f4f6; color:#374151; border:1px solid rgba(15,23,42,0.03); }
+.ann-time { color:var(--muted); font-size:0.85rem; }
 
-.announcement-form button {
-  background-color: #007bff;
-  color: #fff;
-  padding: 10px 16px;
-  font-size: 16px;
-  font-weight: 500;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.2s;
+/* Body and footer */
+.ann-item-body { margin:0; color:#0f172a; line-height:1.45; }
+.ann-item-footer { display:flex; justify-content:flex-end; color:var(--muted); font-size:0.9rem; }
+
+/* Loading / empty states */
+.ann-loading, .ann-empty { padding:18px; text-align:center; color:var(--muted); font-weight:600; }
+
+/* Prevent horizontal overflow for form inputs and items */
+.ann-input, .ann-textarea, .ann-item { min-width: 0; }
+
+/* Responsive adjustments */
+@media (max-width: 980px) {
+  .ann-form-row { flex-direction: column; align-items: stretch; }
+  .ann-btn { width: 100%; }
+  .ann-scroll { max-height: calc(100vh - 420px); }
 }
-
-.announcement-form button:hover {
-  background-color: #0056b3;
-}
-
-.announcement-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.announcement-card {
-  background-color: #fff;
-  padding: 10px 20px;
-  border-radius: 15px;
-  width: 250px;
-  max-width: 100%;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.announcement-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
-}
-
-.announcement-card h3 {
-  margin: 0 0 6px 0;
-  font-size: 18px;
-  color: #222;
-}
-
-.announcement-card p {
-  margin: 0 0 8px 0;
-  color: #555;
-}
-
-.announcement-card small {
-  color: #888;
-  font-size: 13px;
+@media (max-width: 520px) {
+  .ann-page { padding: 12px; }
+  .ann-avatar { width:36px; height:36px; }
+  .ann-title { font-size: 1.05rem; }
+  .ann-scroll { max-height: calc(100vh - 460px); }
 }

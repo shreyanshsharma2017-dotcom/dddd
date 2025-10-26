@@ -4,7 +4,6 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import "./overview.css";
 
 export default function Overview({ projectId }) {
-  console.log("Project ID:", projectId); // Will log the correct ID
   const [stats, setStats] = useState(null);
   const [members, setMembers] = useState([]);
   const [membersLoading, setMembersLoading] = useState(true);
@@ -19,37 +18,43 @@ export default function Overview({ projectId }) {
   ]);
   const [newMember, setNewMember] = useState({ name: "", email: "" });
 
-  const COLORS = ["#4caf50", "#1976d2", "#ff9800"];
+  const COLORS = ["#16a34a", "#2563eb", "#f59e0b"];
 
-  // Fetch overview stats
   useEffect(() => {
+    let mounted = true;
     fetch("http://localhost:5000/admin/overview-stats")
       .then((res) => res.json())
       .then((data) => {
-        setStats(data);
-        if (data.tasks) {
-          setPieData([
-            { name: "Completed", value: data.tasks.completed },
-            { name: "In Progress", value: data.tasks.inProgress },
-            { name: "Pending", value: data.tasks.pending },
-          ]);
-        }
+        if (!mounted) return;
+        setStats(data || {});
+        const t = data?.tasks || {};
+        setPieData([
+          { name: "Completed", value: t.completed || 0 },
+          { name: "In Progress", value: t.inProgress || 0 },
+          { name: "Pending", value: t.pending || 0 },
+        ]);
       })
-      .catch((err) => console.error(err));
+      .catch(() => {
+        if (!mounted) return;
+        setStats({});
+      });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  // Fetch project members
   const fetchProjectMembers = async () => {
     setMembersLoading(true);
+    setMembersError("");
     try {
       const res = await fetch(
         `http://localhost:5000/admin/projects/${projectId}/members`
       );
       const data = await res.json();
-      if (data.success) setMembers(data.members);
-      else setMembersError("Failed to load members");
+      if (data?.success) setMembers(data.members || []);
+      else setMembersError(data?.message || "Failed to load members");
     } catch (err) {
-      setMembersError(err.message);
+      setMembersError(err?.message || "Failed to load members");
     } finally {
       setMembersLoading(false);
     }
@@ -59,26 +64,34 @@ export default function Overview({ projectId }) {
     if (projectId) fetchProjectMembers();
   }, [projectId]);
 
-  // Fetch tasks
   useEffect(() => {
+    let mounted = true;
     const fetchTasks = async () => {
+      setTasksLoading(true);
+      setTasksError("");
       try {
         const res = await fetch("http://localhost:5000/admin/progress");
         const data = await res.json();
-        if (data.success) setTasks(data.tasks);
-        else setTasksError("Failed to load tasks");
+        if (!mounted) return;
+        if (data?.success) setTasks(data.tasks || []);
+        else setTasksError(data?.message || "Failed to load tasks");
       } catch (err) {
-        setTasksError(err.message);
+        if (!mounted) return;
+        setTasksError(err?.message || "Failed to load tasks");
       } finally {
-        setTasksLoading(false);
+        if (mounted) setTasksLoading(false);
       }
     };
     fetchTasks();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  // Add new member to project
   const addNewMember = async () => {
     if (!projectId) return alert("Project ID is missing!");
+    if (!newMember.name.trim() || !newMember.email.trim())
+      return alert("Please fill both name and email");
     try {
       const res = await fetch(
         `http://localhost:5000/admin/projects/${projectId}/add-member`,
@@ -89,157 +102,179 @@ export default function Overview({ projectId }) {
         }
       );
       const data = await res.json();
-      if (data.success) {
-        alert("✅ Member added!");
+      if (data?.success) {
+        alert("Member added");
         setNewMember({ name: "", email: "" });
         fetchProjectMembers();
-      } else alert("❌ " + data.message);
+      } else {
+        alert(data?.message || "Failed to add member");
+      }
     } catch (err) {
-      alert("Error: " + err.message);
+      alert(err?.message || "Network error");
     }
   };
 
   return (
-    <>
-    <div className="overview-container">
-      {/* Top Stats Cards */}
-      <div className="overview-stats">
-        <div className="stat-card">
-          <h3>Total Projects</h3>
-          <p className="stat-number">{stats?.projects?.total || 0}</p>
-          <p className="stat-label">{stats?.projects?.completed || 0} Completed</p>
-          <Briefcase className="stat-icon" />
+    <div className="overview-page" role="region" aria-label="Project overview">
+      <div className="overview-container">
+        <div className="overview-header">
+          <h2 className="page-title">Overview</h2>
+          <p className="page-subtitle">Project summary and team progress</p>
         </div>
 
-        <div className="stat-card">
-          <h3>Total Tasks</h3>
-          <p className="stat-number">{stats?.tasks?.total || 0}</p>
-          <p className="stat-label">{stats?.tasks?.completed || 0} Completed</p>
-          <List className="stat-icon" />
-        </div>
-
-        <div className="stat-card">
-          <h3>Total Members</h3>
-          <p className="stat-number">{stats?.members?.total || 0}</p>
-          <p className="stat-label">{stats?.members?.completed || 0} Completed</p>
-          <Users className="stat-icon" />
-        </div>
-      </div>
-
-      {/* Add Member Section */}
-      <div className="add-member-section bg-white p-6 rounded-2xl shadow-md border border-gray-100 max-w-2xl">
-        <h4 className="text-xl font-semibold text-gray-800 mb-4">Add New Member</h4>
-
-        <div className="flex flex-col md:flex-row items-center gap-3">
-          <div className="relative w-full md:w-1/3">
-            <input
-              type="text"
-              id="memberName"
-              value={newMember.name}
-              onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
-              placeholder="Full Name"
-              className="peer w-full border border-gray-300 rounded-xl px-4 py-2 placeholder-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            />
-            <label
-              htmlFor="memberName"
-              className="absolute left-3 -top-2.5 bg-white px-1 text-gray-500 text-sm transition-all peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:-top-2.5 peer-focus:text-sm peer-focus:text-gray-500"
-            >
-              Full Name
-            </label>
-          </div>
-
-          <div className="relative w-full md:w-1/3">
-            <input
-              type="email"
-              id="memberEmail"
-              value={newMember.email}
-              onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
-              placeholder="Email Address"
-              className="peer w-full border border-gray-300 rounded-xl px-4 py-2 placeholder-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            />
-            <label
-              htmlFor="memberEmail"
-              className="absolute left-3 -top-2.5 bg-white px-1 text-gray-500 text-sm transition-all peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:-top-2.5 peer-focus:text-sm peer-focus:text-gray-500"
-            >
-              Email Address
-            </label>
-          </div>
-
-          <button
-            onClick={addNewMember}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2 rounded-xl shadow-sm transition-all duration-200"
-          >
-            Add & Assign
-          </button>
-        </div>
-      </div>
-
-      {/* Main Grid */}
-      <div className="overview-grid">
-        {/* Team Members */}
-        <div className="card">
-          <h3>Team Members</h3>
-          {membersLoading && <p>Loading...</p>}
-          {membersError && <p style={{ color: "red" }}>{membersError}</p>}
-          {!membersLoading && !membersError && (
-            <div className="scrollable-list">
-              <ul>
-                {members.map((m) => (
-                  <li key={m._id}>
-                    {m.name} — <span>{m.status}</span>
-                  </li>
-                ))}
-              </ul>
+        <div className="overview-stats" aria-hidden={false}>
+          <div className="stat-card">
+            <div>
+              <div className="stat-title">Projects</div>
+              <div className="stat-number">{stats?.projects?.total ?? 0}</div>
+              <div className="stat-label">{stats?.projects?.completed ?? 0} completed</div>
             </div>
-          )}
-        </div>
-
-        {/* Progress Track */}
-        <div className="card">
-          <h3>Progress Track</h3>
-          {tasksLoading && <p>Loading tasks...</p>}
-          {tasksError && <p style={{ color: "red" }}>{tasksError}</p>}
-          {!tasksLoading && !tasksError && tasks.length > 0 && (
-            <ul>
-              {tasks.map((t) => (
-                <li key={t._id}>
-                  {t.name} — {t.progress}%
-                  <div
-                    className="progress-bar"
-                    style={{ width: `${t.progress}%` }}
-                  ></div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        {/* Task Overview Pie Chart */}
-        <div className="card">
-          <h3>Task Overview</h3>
-          <div style={{ width: "100%", height: 250 }}>
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  label
-                >
-                  {pieData.map((entry, idx) => (
-                    <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="stat-icon-wrap" title="Projects">
+              <Briefcase className="stat-icon" />
+            </div>
           </div>
+
+          <div className="stat-card">
+            <div>
+              <div className="stat-title">Tasks</div>
+              <div className="stat-number">{stats?.tasks?.total ?? 0}</div>
+              <div className="stat-label">{stats?.tasks?.completed ?? 0} completed</div>
+            </div>
+            <div className="stat-icon-wrap" title="Tasks">
+              <List className="stat-icon" />
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div>
+              <div className="stat-title">Members</div>
+              <div className="stat-number">{stats?.members?.total ?? 0}</div>
+              <div className="stat-label">{stats?.members?.active ?? 0} active</div>
+            </div>
+            <div className="stat-icon-wrap" title="Members">
+              <Users className="stat-icon" />
+            </div>
+          </div>
+        </div>
+
+        <div className="add-and-grid">
+          <aside className="add-member-section" aria-label="Add member">
+            <h4>Add New Member</h4>
+            <p className="muted">Invite a team member and assign them to this project</p>
+            <div className="add-member-row">
+              <input
+                type="text"
+                aria-label="Full name"
+                placeholder="Full name"
+                value={newMember.name}
+                onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
+              />
+              <input
+                type="email"
+                aria-label="Email address"
+                placeholder="Email address"
+                value={newMember.email}
+                onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
+              />
+              <button onClick={addNewMember} className="btn-primary">
+                Add & Assign
+              </button>
+            </div>
+          </aside>
+
+          <main className="overview-grid" aria-live="polite">
+            <section className="card" aria-labelledby="team-members-heading">
+              <h4 id="team-members-heading">Team Members</h4>
+              {membersLoading && <div className="muted">Loading members…</div>}
+              {membersError && <div className="error">{membersError}</div>}
+              {!membersLoading && !membersError && (
+                <div className="scrollable">
+                  <ul>
+                    {members.length === 0 && <li className="muted">No members found</li>}
+                    {members.map((m) => (
+                      <li key={m._id} className="member-row">
+                        <div className="member-left">
+                          <div className="member-avatar" aria-hidden>
+                            {m.name ? m.name.charAt(0).toUpperCase() : "?"}
+                          </div>
+                          <div className="member-meta">
+                            <div className="member-name">{m.name || "Unnamed"}</div>
+                            <div className="member-email">{m.email || "—"}</div>
+                          </div>
+                        </div>
+                        <div className={`member-badge ${m.status?.toLowerCase() || "unknown"}`}>
+                          {m.status || "Unknown"}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </section>
+
+            <section className="card" aria-labelledby="progress-heading">
+              <h4 id="progress-heading">Progress Track</h4>
+              {tasksLoading && <div className="muted">Loading tasks…</div>}
+              {tasksError && <div className="error">{tasksError}</div>}
+              {!tasksLoading && !tasksError && (
+                <div className="scrollable">
+                  <ul>
+                    {tasks.length === 0 && <li className="muted">No tasks found</li>}
+                    {tasks.map((t) => (
+                      <li key={t._id} className="task-item">
+                        <div className="task-head">
+                          <div className="task-name">{t.name}</div>
+                          <div className="task-percent">{t.progress ?? 0}%</div>
+                        </div>
+                        <div className="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={t.progress ?? 0}>
+                          <div
+                            className="progress-fill"
+                            style={{ width: `${Math.max(0, Math.min(100, t.progress || 0))}%` }}
+                          />
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </section>
+
+            <section className="card" aria-labelledby="pie-heading">
+              <h4 id="pie-heading">Task Overview</h4>
+              <div className="chart-wrap" role="img" aria-label="Tasks distribution chart">
+                <ResponsiveContainer>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      innerRadius={40}
+                      paddingAngle={4}
+                    >
+                      {pieData.map((entry, idx) => (
+                        <Cell key={entry.name} fill={COLORS[idx % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="legend">
+                {pieData.map((p, i) => (
+                  <div key={p.name} className="legend-item">
+                    <span className="legend-swatch" style={{ background: COLORS[i % COLORS.length] }} />
+                    <span className="legend-label">{p.name}</span>
+                    <span className="legend-value">{p.value}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </main>
         </div>
       </div>
     </div>
-    </>
   );
 }

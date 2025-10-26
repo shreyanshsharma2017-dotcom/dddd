@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import "./leaveRequests.css";
 
 export default function LeaveRequests() {
   const [leaveRequests, setLeaveRequests] = useState([]);
@@ -7,7 +8,7 @@ export default function LeaveRequests() {
   useEffect(() => {
     fetchLeaveRequests();
   }, []);
-  
+
   const fetchLeaveRequests = async () => {
     setLoading(true);
     try {
@@ -19,9 +20,11 @@ export default function LeaveRequests() {
         },
       });
       const data = await res.json();
-      if (data.success) setLeaveRequests(data.leaveRequests || []);
+      if (data?.success) setLeaveRequests(data.leaveRequests || []);
+      else setLeaveRequests([]);
     } catch (err) {
       console.error("Error fetching leave requests:", err);
+      setLeaveRequests([]);
     } finally {
       setLoading(false);
     }
@@ -39,70 +42,90 @@ export default function LeaveRequests() {
         body: JSON.stringify({ status }),
       });
       const data = await res.json();
-      if (data.success) {
+      if (data?.success) {
         alert(`Leave ${status.toLowerCase()}!`);
         fetchLeaveRequests();
       } else {
-        alert("Failed to update leave request");
+        alert(data?.message || "Failed to update leave request");
       }
     } catch (err) {
       console.error("Error updating leave request:", err);
+      alert("Network error while updating leave request");
     }
   };
 
   return (
-    <div>
-      <h2>Leave Requests</h2>
-      {loading ? (
-        <p>Loading leave requests...</p>
-      ) : (
-        <div style={{ maxHeight: "400px", overflowY: "auto", border: "1px solid #eee" }}>
-          <table className="employee-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>From</th>
-                <th>To</th>
-                <th>Reason</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leaveRequests.map((leave) => (
-                <tr key={leave._id}>
-                  <td>{leave.userId?.firstName || "Unknown"}</td>
-                  <td>{leave.userId?.email || "Unknown"}</td>
-                  <td>{leave.from}</td>
-                  <td>{leave.to}</td>
-                  <td>{leave.reason}</td>
-                  <td>{leave.status}</td>
-                  <td>
-                    {leave.status === "Pending" && (
-                      <>
-                        <button
-                          className="approve-btn"
-                          onClick={() => handleStatusChange(leave._id, "Approved")}
-                        >
-                          Approve
-                        </button>
-                        <button
-                          className="reject-btn"
-                          onClick={() => handleStatusChange(leave._id, "Rejected")}
-                        >
-                          Reject
-                        </button>
-                      </>
-                    )}
-                    {leave.status !== "Pending" && <span>—</span>}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+    <div className="lr-page">
+      <div className="lr-container">
+        <header className="lr-header">
+          <h2 className="lr-title">Leave Requests</h2>
+          <p className="lr-sub">Review and respond to team leave requests</p>
+        </header>
+
+        <section className="lr-card" aria-live="polite">
+          {loading ? (
+            <div className="lr-loading">Loading leave requests…</div>
+          ) : (
+            <>
+              {leaveRequests.length === 0 ? (
+                <div className="lr-empty">No leave requests found.</div>
+              ) : (
+                <div className="lr-table-wrap" role="region" aria-label="Leave requests table">
+                  <table className="lr-table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {leaveRequests.map((leave) => (
+                        <tr key={leave._id}>
+                          <td className="lr-name">{leave.userId?.firstName || "Unknown"}</td>
+                          <td className="lr-email">{leave.userId?.email || "Unknown"}</td>
+                          <td>{leave.from || "—"}</td>
+                          <td>{leave.to || "—"}</td>
+                          <td className="lr-reason">{leave.reason || "—"}</td>
+                          <td>
+                            <span className={`lr-status ${leave.status?.toLowerCase() || "unknown"}`}>
+                              {leave.status || "Unknown"}
+                            </span>
+                          </td>
+                          <td className="lr-actions">
+                            {leave.status === "Pending" ? (
+                              <>
+                                <button
+                                  className="btn btn-approve"
+                                  onClick={() => handleStatusChange(leave._id, "Approved")}
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  className="btn btn-reject"
+                                  onClick={() => handleStatusChange(leave._id, "Rejected")}
+                                >
+                                  Reject
+                                </button>
+                              </>
+                            ) : (
+                              <span className="lr-dash">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

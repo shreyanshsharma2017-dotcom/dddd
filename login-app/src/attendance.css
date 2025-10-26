@@ -1,0 +1,124 @@
+:root{
+  --bg: #f7fafc;
+  --card: #ffffff;
+  --muted: #6b7280;
+  --accent: #2563eb;
+  --success: #16a34a;
+  --danger: #ef4444;
+  --radius: 10px;
+  --shadow: 0 8px 24px rgba(2,6,23,0.06);
+  --max-width: 1100px;
+}
+
+/* Page wrapper: full viewport and vertical scrolling */
+.att-page {
+  min-height: 100vh;
+  background: var(--bg);
+  padding: 20px;
+  box-sizing: border-box;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+  color: #0f172a;
+}
+
+/* Center content and set column layout */
+.att-container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Header */
+.att-header { display:flex; justify-content:space-between; align-items:center; }
+.att-title { margin: 0; font-size: 1.25rem; font-weight:700; }
+.att-sub { margin: 0; color: var(--muted); font-size:0.95rem; }
+
+/* Card */
+.att-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(15,23,42,0.04);
+}
+
+/* Loading / empty */
+.att-loading, .att-empty { padding:24px; text-align:center; color:var(--muted); font-weight:600; }
+
+/* Table wrapper: allow inner scroll while preserving header */
+.att-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 60vh; /* adjust to suit header/form height so page remains scrollable */
+  border-radius: 8px;
+  box-sizing: border-box;
+  padding-right: 6px;
+}
+
+/* Table base styles */
+.att-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px; /* ensures readable columns on wide screens; will scroll on small screens */
+  font-size: 0.95rem;
+}
+.att-table thead {
+  background: #fbfdff;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.att-table th, .att-table td {
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid #f3f4f6;
+}
+.att-table th {
+  font-size: 0.85rem;
+  color: #374151;
+  font-weight:700;
+}
+
+/* Row hover */
+.att-table tbody tr:hover { background: #f8fafc; }
+
+/* Column specifics */
+.att-name { font-weight:600; color:#0f172a; }
+.att-email { color:var(--muted); font-size:0.9rem; }
+.att-date { color:#374151; }
+
+/* Status badges */
+.att-status {
+  display:inline-block;
+  padding:6px 10px;
+  border-radius:999px;
+  font-weight:700;
+  font-size:0.82rem;
+  text-transform:capitalize;
+}
+.att-status.present { background:#ecfdf5; color:#065f46; border:1px solid rgba(6,95,70,0.08); }
+.att-status.absent { background:#fff7ed; color:#92400e; border:1px solid rgba(146,64,14,0.06); }
+.att-status.leave { background:#eef2ff; color:#0f172a; border:1px solid rgba(59,130,246,0.08); }
+.att-status.unknown { background:#f3f4f6; color:#374151; border:1px solid rgba(15,23,42,0.03); }
+
+/* Prevent horizontal overflow */
+.att-page, .att-container, .att-card, .att-table-wrap, .att-table, .att-item { width:100%; min-width:0; }
+
+/* Responsive tweaks */
+@media (max-width: 1000px) {
+  .att-table { min-width: 620px; }
+  .att-table-wrap { max-height: 66vh; }
+}
+@media (max-width: 640px) {
+  .att-table { min-width: 520px; font-size:0.92rem; }
+  .att-title { font-size:1.1rem; }
+  .att-table-wrap { max-height: 68vh; }
+}
+
+/* Accessibility: focus outlines */
+button:focus, a:focus, input:focus, textarea:focus {
+  outline: 3px solid rgba(37,99,235,0.18);
+  outline-offset: 2px;
+}

@@ -7,6 +7,7 @@ export default function Announcements({ currentUser }) {
   const [message, setMessage] = useState("");
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [posting, setPosting] = useState(false);
 
   // Fetch all announcements
   const fetchAnnouncements = async () => {
@@ -14,10 +15,12 @@ export default function Announcements({ currentUser }) {
       setLoading(true);
       const res = await fetch("http://localhost:5000/announcements");
       const data = await res.json();
-      if (data.success) setAnnouncements(data.announcements);
-      setLoading(false);
+      if (data?.success) setAnnouncements(data.announcements || []);
+      else setAnnouncements([]);
     } catch (err) {
       console.error("Failed to fetch announcements:", err);
+      setAnnouncements([]);
+    } finally {
       setLoading(false);
     }
   };
@@ -29,11 +32,10 @@ export default function Announcements({ currentUser }) {
   // Submit announcement
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!currentUser) return alert("User not loaded yet");
-    if (!title || !message) return alert("Title and message are required");
+    if (!title.trim() || !message.trim()) return alert("Title and message are required");
 
-    const role = currentUser.role?.toLowerCase() || "user";
+    const role = (currentUser.role || "user").toLowerCase();
 
     const url =
       role === "admin"
@@ -42,72 +44,124 @@ export default function Announcements({ currentUser }) {
 
     const payload =
       role === "admin"
-        ? { title, message }
-        : { title, message, userId: currentUser._id };
+        ? { title: title.trim(), message: message.trim() }
+        : { title: title.trim(), message: message.trim(), userId: currentUser._id };
 
     try {
+      setPosting(true);
       const res = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(role === "admin" && { userId: currentUser._id }), // required for isAdmin
+          ...(role === "admin" && { userId: currentUser._id }),
         },
         body: JSON.stringify(payload),
       });
 
       const data = await res.json();
-      if (data.success) {
+      if (data?.success) {
         setTitle("");
         setMessage("");
-        fetchAnnouncements(); // refresh list
+        fetchAnnouncements();
       } else {
-        alert(data.message || "Failed to post announcement");
+        alert(data?.message || "Failed to post announcement");
       }
     } catch (err) {
       console.error("Error posting announcement:", err);
+      alert("Network error while posting announcement");
+    } finally {
+      setPosting(false);
     }
   };
 
   return (
-    <div className="announcements-container">
-      <h2>Announcements</h2>
+    <div className="ann-page">
+      <div className="ann-container">
+        <header className="ann-header">
+          <div>
+            <h1 className="ann-title">Announcements</h1>
+            <p className="ann-sub">Post updates for your team and view recent notices</p>
+          </div>
 
-      {/* Post Announcement Form */}
-      <form onSubmit={handleSubmit} className="announcement-form">
-        <input
-          type="text"
-          placeholder="Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-        <textarea
-          placeholder="Message"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-        />
-        <button type="submit">Post Announcement</button>
-      </form>
+          <div className="ann-user">
+            {currentUser ? (
+              <>
+                <div className="ann-avatar">
+                  {(currentUser.firstName || "?").charAt(0).toUpperCase()}
+                </div>
+                <div className="ann-user-meta">
+                  <div className="ann-user-name">
+                    {currentUser.firstName} {currentUser.lastName}
+                  </div>
+                  <div className="ann-user-role">{currentUser.role}</div>
+                </div>
+              </>
+            ) : (
+              <div className="ann-muted">User not loaded</div>
+            )}
+          </div>
+        </header>
 
-      {/* Announcement List */}
-      <div className="announcement-list">
-        {loading ? (
-          <p>Loading announcements...</p>
-        ) : announcements.length === 0 ? (
-          <p>No announcements yet.</p>
-        ) : (
-          announcements.map((a) => (
-            <div key={a._id} className="announcement-card">
-              <h3>{a.title}</h3>
-              <p>{a.message}</p>
-              <small>
-                {a.createdBy
-                  ? `${a.createdBy.firstName} ${a.createdBy.lastName} (${a.role})`
-                  : a.role}{" "}
-                | {new Date(a.date).toLocaleString()}
-              </small>
+        <section className="ann-form-card">
+          <form className="ann-form" onSubmit={handleSubmit}>
+            <div className="ann-form-row">
+              <input
+                type="text"
+                className="ann-input"
+                placeholder="Title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                aria-label="Title"
+              />
+              <button type="submit" className="ann-btn" disabled={posting}>
+                {posting ? "Posting…" : "Post"}
+              </button>
             </div>
-          ))
-        )}
+
+            <textarea
+              className="ann-textarea"
+              placeholder="Write your message..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              rows={4}
+              aria-label="Message"
+            />
+          </form>
+        </section>
+
+        <section className="ann-list" aria-live="polite">
+          {loading ? (
+            <div className="ann-loading">Loading announcements…</div>
+          ) : announcements.length === 0 ? (
+            <div className="ann-empty">No announcements yet.</div>
+          ) : (
+            <div className="ann-scroll" role="region" aria-label="Announcements list">
+              {announcements.map((a) => (
+                <article key={a._id} className="ann-item">
+                  <div className="ann-item-head">
+                    <h3 className="ann-item-title">{a.title}</h3>
+                    <div className="ann-item-meta">
+                      <span className={`ann-badge ${a.role ? a.role.toLowerCase() : "user"}`}>
+                        {a.role || "user"}
+                      </span>
+                      <time className="ann-time">
+                        {a.date ? new Date(a.date).toLocaleString() : ""}
+                      </time>
+                    </div>
+                  </div>
+
+                  <p className="ann-item-body">{a.message}</p>
+
+                  <div className="ann-item-footer">
+                    <span className="ann-author">
+                      {a.createdBy ? `${a.createdBy.firstName} ${a.createdBy.lastName}` : "System"}
+                    </span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );

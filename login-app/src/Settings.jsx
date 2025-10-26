@@ -11,77 +11,108 @@ export default function Settings() {
     { action: "User logged in", timestamp: new Date() },
     { action: "Project created", timestamp: new Date() },
     { action: "Settings updated", timestamp: new Date() },
+    { action: "Payroll approved", timestamp: new Date() },
+    { action: "Announcement posted", timestamp: new Date() },
+    { action: "Member invited", timestamp: new Date() },
   ];
 
   const handleSave = () => {
+    // Replace alert with real save logic when ready
     alert(`Settings saved!\nTheme: ${theme}\nLanguage: ${language}\nTimezone: ${timezone}`);
   };
 
   return (
     <div className="settings-page">
-      <h2 className="page-title">System Configuration</h2>
-      <div className="settings-grid">
-        {/* Theme */}
-        <div className="settings-card">
-          <div className="card-header">
-            {theme === "light" ? <Sun className="icon" /> : <Moon className="icon" />}
-            <h3>Theme</h3>
+      <div className="settings-container">
+        <header className="settings-header">
+          <div>
+            <h1 className="settings-title">System Configuration</h1>
+            <p className="settings-sub">Manage theme, language, timezone and view recent admin activity</p>
           </div>
-          <p className="card-desc">Switch between Light or Dark mode</p>
-          <select value={theme} onChange={(e) => setTheme(e.target.value)}>
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-          </select>
+        </header>
+
+        <div className="settings-grid">
+          <section className="settings-card">
+            <div className="card-header">
+              <div className="icon-wrap">{theme === "light" ? <Sun /> : <Moon />}</div>
+              <div className="card-title">
+                <h3>Theme</h3>
+                <p className="card-desc">Switch between light and dark mode</p>
+              </div>
+            </div>
+
+            <div className="control-row">
+              <label className="select-label">Theme</label>
+              <select value={theme} onChange={(e) => setTheme(e.target.value)} className="select">
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+              </select>
+            </div>
+          </section>
+
+          <section className="settings-card">
+            <div className="card-header">
+              <div className="icon-wrap"><Globe /></div>
+              <div className="card-title">
+                <h3>Language</h3>
+                <p className="card-desc">Select system display language</p>
+              </div>
+            </div>
+
+            <div className="control-row">
+              <label className="select-label">Language</label>
+              <select value={language} onChange={(e) => setLanguage(e.target.value)} className="select">
+                <option>English</option>
+                <option>Hindi</option>
+                <option>Spanish</option>
+                <option>French</option>
+              </select>
+            </div>
+
+            <hr className="divider" />
+
+            <div className="card-header small">
+              <div className="icon-wrap"><Clock /></div>
+              <div className="card-title">
+                <h3>Timezone</h3>
+                <p className="card-desc">Set your local timezone</p>
+              </div>
+            </div>
+
+            <div className="control-row">
+              <label className="select-label">Timezone</label>
+              <select value={timezone} onChange={(e) => setTimezone(e.target.value)} className="select">
+                <option>Asia/Kolkata</option>
+                <option>America/New_York</option>
+                <option>Europe/London</option>
+                <option>Asia/Tokyo</option>
+              </select>
+            </div>
+          </section>
+
+          <aside className="settings-card logs-card">
+            <div className="card-header">
+              <div className="icon-wrap"><FileText /></div>
+              <div className="card-title">
+                <h3>Audit Logs</h3>
+                <p className="card-desc">Recent admin activity</p>
+              </div>
+            </div>
+
+            <div className="audit-logs" role="log" aria-live="polite">
+              {logs.map((log, i) => (
+                <div className="log-row" key={i}>
+                  <div className="log-action">{log.action}</div>
+                  <div className="log-time">{log.timestamp.toLocaleString()}</div>
+                </div>
+              ))}
+            </div>
+          </aside>
         </div>
 
-        {/* Language & Timezone */}
-        <div className="settings-card">
-          <div className="card-header">
-            <Globe className="icon" />
-            <h3>Language</h3>
-          </div>
-          <p className="card-desc">Select system display language</p>
-          <select value={language} onChange={(e) => setLanguage(e.target.value)}>
-            <option>English</option>
-            <option>Hindi</option>
-            <option>Spanish</option>
-            <option>French</option>
-          </select>
-
-          <div className="card-header mt-4">
-            <Clock className="icon" />
-            <h3>Timezone</h3>
-          </div>
-          <p className="card-desc">Set your local timezone</p>
-          <select value={timezone} onChange={(e) => setTimezone(e.target.value)}>
-            <option>Asia/Kolkata</option>
-            <option>America/New_York</option>
-            <option>Europe/London</option>
-            <option>Asia/Tokyo</option>
-          </select>
+        <div className="save-btn-container">
+          <button className="save-btn" onClick={handleSave}>Save Changes</button>
         </div>
-
-        {/* Audit Logs */}
-        <div className="settings-card logs-card">
-          <div className="card-header">
-            <FileText className="icon" />
-            <h3>Audit Logs</h3>
-          </div>
-          <p className="card-desc">Recent admin activity</p>
-          <div className="audit-logs">
-            {logs.map((log, i) => (
-              <p key={i}>
-                • {log.action} — <span className="log-date">{log.timestamp.toLocaleString()}</span>
-              </p>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="save-btn-container">
-        <button className="save-btn" onClick={handleSave}>
-          Save Changes
-        </button>
       </div>
     </div>
   );
